@@ -1,0 +1,4 @@
+access_key_id: my_key_here
+secret_access_key: my_key_secret_here
+default_key: MyKey
+default_security_group: MyGroup
