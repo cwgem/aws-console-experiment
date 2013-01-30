@@ -107,6 +107,60 @@ class AwsAccess
     )
   end
 
+  # This duplicates an instance while maintaining the volumes
+  # attached as well. It does this by creating snapshots of the volumes,
+  # then mounting them to the new instance at the same mount point. New
+  # instances are created in the same availability zone so snapshots will
+  # mount to them properly
+  def duplicate_instance_with_volumes(id, ami_id = nil, count=1)
+    instance = AWS::EC2::Instance.new(id)
+    image_id = ami_id || instance.image_id
+    key_name = instance.key_name || @default_key
+
+    volumes = get_instance_volumes(id)
+    snapshots = {}
+
+    volumes.each do | device, volume |
+      snapshots[device] = volume.create_snapshot
+    end
+
+    puts "Waiting for snapshots to complete. This may take awhile...."
+    snapshots.each do | device, snapshot |
+      # Try not to hit the API too much
+      sleep 15 while snapshot.status != :completed
+    end
+    puts "Snapshots completed. Bringing up instance."
+
+    options = {
+      :image_id => image_id,
+      :instance_type => instance.instance_type,
+      :count => count,
+      :security_groups => instance.security_groups.map(&:name).join(" "),
+      :key_name => key_name,
+      :availability_zone => instance.availability_zone
+    }
+
+    if snapshots.length != 0 
+      mappings = {}
+      snapshots.each do | device, snapshot |
+        mappings[device] = { :snapshot => snapshot }
+      end
+      options[:block_device_mappings] = mappings
+    end
+
+    @ec2.instances.create(options)
+  end
+
+  def get_instance_volumes(id)
+    AWS.memoize do
+      @ec2.volumes.inject({}){ | x, v | 
+        v.attachments.each { | a | 
+          x[a.device] = v if a.instance.id == id && a.device != '/dev/sda1' 
+        }; x 
+      }
+    end
+  end
+
   def duplicate_instance(id, count=1)
     instance = AWS::EC2::Instance.new(id)
     key_name = instance.key_name || @default_key
