@@ -161,12 +161,13 @@ class AwsAccess
     end
   end
 
-  def duplicate_instance(id, count=1)
+  def duplicate_instance(id, ami_id = nil, count=1)
     instance = AWS::EC2::Instance.new(id)
     key_name = instance.key_name || @default_key
+    image_id = ami_id || instance.image_id
 
     @ec2.instances.create(
-      :image_id => instance.image_id,
+      :image_id => image_id,
       :instance_type => instance.instance_type,
       :count => count,
       :security_groups => instance.security_groups.map(&:name).join(" "),
