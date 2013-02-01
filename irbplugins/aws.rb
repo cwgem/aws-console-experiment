@@ -10,7 +10,7 @@ require 'aws-sdk'
 #
 # returns witchcraft
 def print_flex_table(headers, values)
-  raise ArgumentError.new('Table header and value count does not match') if headers.length != values[0].length
+  raise ArgumentError.new('Table header and value count does not match') if values.length != 0 and headers.length != values[0].length
 
   column_lengths = []
 
