@@ -1,4 +1,5 @@
 require 'aws-sdk'
+require 'parseconfig'
 
 # Function to print a flex table which pads values that are
 # less in length than the longest value for the column
@@ -55,10 +56,10 @@ class AwsAccess
   attr_accessor :ec2
 
   def initialize()
-    if File.exists? "#{ENV['HOME']}/.ec2/aws_config.yaml"
+    if File.exists? "#{ENV['HOME']}/.ec2/aws.config"
       # This is for working with IRB, so I'll let IRB present
       # the exceptions for the user to check into
-      config_data = YAML.load(File.read("#{ENV['HOME']}/.ec2/aws_config.yaml"))
+      config_data = ParseConfig.new("#{ENV['HOME']}/.ec2/aws.config")
       key = config_data['access_key_id']
       secret = config_data['secret_access_key']
 
@@ -171,7 +172,7 @@ class AwsAccess
     end
   end
 
-  def duplicate_instance(id, ami_id = nil, instance_type = nil count=1)
+  def duplicate_instance(id, ami_id = nil, instance_type = nil, count=1)
     instance = AWS::EC2::Instance.new(id)
     key_name = instance.key_name || @default_key
     image_id = ami_id || instance.image_id
