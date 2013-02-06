@@ -5,7 +5,7 @@ This project is meant to be a proof of concept for using irb to create work flow
 ## Requirements ##
 
 1. Ruby 1.9
-2. aws-sdk gem
+2. aws-sdk parseconfig gem
 3. Existence
 
 ## Why A Console? ##
@@ -57,10 +57,10 @@ As for the script itself (`~/irbplugins/aws.rb`), the file is rather large (the 
   attr_accessor :ec2
 
   def initialize()
-    if File.exists? "#{ENV['HOME']}/.ec2/aws_config.yaml"
+    if File.exists? "#{ENV['HOME']}/.ec2/aws.config"
       # This is for working with IRB, so I'll let IRB present
       # the exceptions for the user to check into
-      config_data = YAML.load(File.read("#{ENV['HOME']}/.ec2/aws_config.yaml"))
+      config_data = ParseConfig.new("#{ENV['HOME']}/.ec2/aws.config")
       key = config_data['access_key_id']
       secret = config_data['secret_access_key']
 
@@ -79,13 +79,13 @@ As for the script itself (`~/irbplugins/aws.rb`), the file is rather large (the 
 
 This is all wrapped in a class called `AwsAccess`. The initializer does basic setup for authentication and configuration, and in this case give me an ec2 instance variable to work with. Notice I've made it `attr_accessor` which let's me use irb to play around with the various EC2 methods and variables for experimentation. 
 
-The configuration is read from an `aws_config.yaml` file in `~/.ec2`. It looks like this:
+The configuration is read from an `aws.config` file in `~/.ec2`. It looks like this:
 
 ```
-access_key_id: my_key_id
-secret_access_key: my_key_secret
-default_key: MyGroup
-default_security_group: MyGroup
+access_key_id = my_key_id
+secret_access_key = my_key_secret
+default_key = MyGroup
+default_security_group = MyGroup
 ```
 (Sorry to let down those who were waiting for me to expose my AWS creds ;)
 
