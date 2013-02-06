@@ -72,6 +72,7 @@ class AwsAccess
 
     AWS.config({ :access_key_id => key, :secret_access_key => secret })
     @ec2 = AWS::EC2.new()
+    @account_id = AWS::IAM.new.client.get_user[:user][:user_id]
   end
 
   def list_regions()
@@ -80,6 +81,19 @@ class AwsAccess
 
   def switch_region(region)
     @ec2 = AWS::EC2.new(:ec2_endpoint => "ec2.#{region}.amazonaws.com")
+  end
+
+  def describe_snapshots()
+    headers = ["Snapshot ID", "Description", "Size", "Status", "Progress"]
+    values = []
+
+    AWS.memoize do
+      @ec2.snapshots.filter('owner-id',@account_id).each do | s |
+        values << [s.id, s.description, "#{s.volume_size}G", s.status, s.progress]
+      end
+    end
+    
+    print_flex_table(headers, values)
   end
 
   def describe_instances()
