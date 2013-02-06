@@ -151,6 +151,16 @@ class AwsAccess
     @ec2.instances.create(options)
   end
 
+  def attach_snapshot_instance(snapshot_id, instance_id, device)
+    snapshot = @ec2.snapshots[snapshot_id]
+    instance = @ec2.instances[instance_id]
+    
+    volume = snapshot.create_volume(instance.availability_zone)
+    sleep 5 until volume.status == :available
+
+    volume.attach_to(instance, device)
+  end
+
   def get_instance_volumes(id)
     AWS.memoize do
       @ec2.volumes.inject({}){ | x, v | 
@@ -161,14 +171,15 @@ class AwsAccess
     end
   end
 
-  def duplicate_instance(id, ami_id = nil, count=1)
+  def duplicate_instance(id, ami_id = nil, instance_type = nil count=1)
     instance = AWS::EC2::Instance.new(id)
     key_name = instance.key_name || @default_key
     image_id = ami_id || instance.image_id
+    instance_type = instance_type || instance.instance_type
 
     @ec2.instances.create(
       :image_id => image_id,
-      :instance_type => instance.instance_type,
+      :instance_type => instance_type,
       :count => count,
       :security_groups => instance.security_groups.map(&:name).join(" "),
       :key_name => key_name
